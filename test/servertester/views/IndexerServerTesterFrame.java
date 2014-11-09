@@ -5,7 +5,6 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
-import client.GUI.GUIViewInterface;
 import servertester.controllers.*;
 import static servertester.views.Constants.*;
 

@@ -2,7 +2,6 @@ package servertester.controllers;
 
 import java.util.*;
 
-import client.GUI.GUIViewInterface;
 import client.communicator.ClientCommunicator;
 import client.communicator.ClientException;
 import servertester.views.*;
@@ -13,17 +12,17 @@ import shared.modelclasses.*;
 
 public class Controller implements IController {
 
-	private GUIViewInterface _view;
+	private TestView _view;
 	
 	public Controller() {
 		return;
 	}
 	
-	public GUIViewInterface getView() {
+	public TestView getView() {
 		return _view;
 	}
 	
-	public void setView(GUIViewInterface value) {
+	public void setView(TestView value) {
 		_view = value;
 	}
 	
@@ -121,7 +120,7 @@ public class Controller implements IController {
 				getView().setResponse("FALSE\n");
 			}
 			
-		} catch(ClientException e){
+		} catch(Exception e){
 			getView().setResponse("FAILED\n");
 		}
 

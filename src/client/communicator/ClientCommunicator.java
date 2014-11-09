@@ -42,30 +42,30 @@ public class ClientCommunicator {
 		try {
 			URL_PREFIX = "http://" + SERVER_HOST + ":" + SERVER_PORT;
 			URL url = new URL(URL_PREFIX + urlPath);
-			System.out.println("************************************");
-			System.out.println("URL: " + url.toString());
-			System.out.println("Post body details: ");
-			System.out.println("\tAddress: " + postData.toString());
-			System.out.println("\tClass: " + postData.getClass());
-			System.out.println("\tHash Code: " + postData.hashCode());
-			System.out.println("************************************");
+//			System.out.println("************************************");
+//			System.out.println("URL: " + url.toString());
+//			System.out.println("Post body details: ");
+//			System.out.println("\tAddress: " + postData.toString());
+//			System.out.println("\tClass: " + postData.getClass());
+//			System.out.println("\tHash Code: " + postData.hashCode());
+//			System.out.println("************************************");
 			HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-			System.out.println("Connection successfully opened - line 53");
+//			System.out.println("Connection successfully opened - line 53");
 			connection.setRequestMethod(HTTP_POST);
 			connection.setDoOutput(true);
 			connection.setDoInput(true);
 			connection.setRequestProperty("Accept",  "html/text");
 			connection.connect();
-			System.out.println("Connect method successfully called on connection - line 59");
+//			System.out.println("Connect method successfully called on connection - line 59");
 			xmlStream.toXML(postData, connection.getOutputStream());
-			System.out.println("XML Stream successfully brought data back - line 61");
+//			System.out.println("XML Stream successfully brought data back - line 61");
 			//connection.getOutputStream().close();
 			if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
 				throw new ClientException(String.format("doPost failed: %s (http code %d)",
 						urlPath, connection.getResponseCode()));
 			}
 			else{
-				System.out.println("HTTP is good");
+//				System.out.println("HTTP is good");
 				Object o = (Object) xmlStream.fromXML(connection.getInputStream());
 				return o;
 			}

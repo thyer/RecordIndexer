@@ -1,6 +1,5 @@
 package servertester.views;
 
-import client.GUI.GUIViewInterface;
 import servertester.controllers.*;
 
 public class TestView implements ViewInterface {
