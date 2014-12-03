@@ -165,6 +165,7 @@ public class ServerFacade {
 			db.endTransaction(true);
 			return output;
 		}catch(Exception e){
+			e.printStackTrace();
 			db.endTransaction(false);
 			throw new ServerException(e.getMessage(), e);
 		}

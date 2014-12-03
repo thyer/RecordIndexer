@@ -14,7 +14,7 @@ public class GuiTester {
 						IndexerServerTesterFrame frame = new IndexerServerTesterFrame();			
 						Controller controller = new Controller();
 						frame.setController(controller);			
-						//controller.setView(frame);
+						controller.setView(frame);
 						controller.initialize();
 						frame.setVisible(true);
 					}

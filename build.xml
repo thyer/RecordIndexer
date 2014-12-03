@@ -155,7 +155,7 @@
 	<!-- If host and/or port number are omitted, default values are used. -->
 	<!-- EXAMPLE: ant client -->
 	<target name="client" depends="compile" description="run client using server on specified host and port">
-				<java classname="client.communicator.ClientCommunicator" fork="yes">
+				<java classname="client.GUI.RecordIndexerGUI" fork="yes">
 			<classpath>
 				<path refid="all-classpath"/>
 			</classpath>

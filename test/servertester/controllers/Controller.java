@@ -12,18 +12,18 @@ import shared.modelclasses.*;
 
 public class Controller implements IController {
 
-	private TestView _view;
+	private IndexerServerTesterFrame _view;
 	
 	public Controller() {
 		return;
 	}
 	
-	public TestView getView() {
+	public IndexerServerTesterFrame getView() {
 		return _view;
 	}
 	
-	public void setView(TestView value) {
-		_view = value;
+	public void setView(IndexerServerTesterFrame frame) {
+		_view = frame;
 	}
 	
 	// IController methods

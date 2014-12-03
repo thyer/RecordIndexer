@@ -24,6 +24,22 @@
       <email>sheila.parker@gmail.com</email>
       <indexedrecords>0</indexedrecords>
     </user>
+    <user>
+      <username>test3</username>
+      <password>test3</password>
+      <firstname>Test</firstname>
+      <lastname>Three</lastname>
+      <email>test3@gmail.com</email>
+      <indexedrecords>0</indexedrecords>
+    </user>
+        <user>
+      <username>test4</username>
+      <password>test4</password>
+      <firstname>Test</firstname>
+      <lastname>Four</lastname>
+      <email>test4@gmail.com</email>
+      <indexedrecords>0</indexedrecords>
+    </user>
   </users>
   <projects>
     <project>

@@ -100,7 +100,12 @@ public class Server {
 	private DownloadFileHandler downloadFileHandler = new DownloadFileHandler();
 	
 	public static void main(String[] args) {
-		SERVER_PORT_NUMBER = Integer.parseInt(args[0]);
+		if(args.length>0){
+			SERVER_PORT_NUMBER = Integer.parseInt(args[0]);
+		}
+		else{
+			SERVER_PORT_NUMBER = 8081;
+		}
 		new Server().run();
 		logger.info("Server running on port: " + SERVER_PORT_NUMBER);
 	}

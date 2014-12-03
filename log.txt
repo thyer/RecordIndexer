@@ -1,6 +1,24 @@
-Oct 29, 2014 5:37:47 PM server.Server run
+Dec 02, 2014 5:04:10 PM server.Server run
 INFO: Initializing Model
-Oct 29, 2014 5:37:47 PM server.Server run
+Dec 02, 2014 5:04:10 PM server.facade.ServerFacade initialize
+INFO: Initializing server facade
+Dec 02, 2014 5:04:10 PM server.Server run
 INFO: Initializing HTTP Server
-Oct 29, 2014 5:37:47 PM server.Server run
+Dec 02, 2014 5:04:10 PM server.Server run
 INFO: Starting HTTP Server
+Dec 02, 2014 5:04:10 PM server.Server main
+INFO: Server running on port: 8081
+Dec 02, 2014 5:04:27 PM server.facade.ServerFacade downloadBatch
+INFO: Entering download batch method with credentials
+	Username: sheila
+	Project: 1
+Dec 02, 2014 5:04:27 PM server.databaseaccess.Database endTransaction
+SEVERE: Rollback/Commit failure on database
+Dec 02, 2014 5:05:09 PM server.facade.ServerFacade downloadBatch
+INFO: Entering download batch method with credentials
+	Username: test3
+	Project: 1
+Dec 02, 2014 5:05:49 PM server.facade.ServerFacade downloadBatch
+INFO: Entering download batch method with credentials
+	Username: test2
+	Project: 2
