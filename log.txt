@@ -22,3 +22,7 @@ Dec 02, 2014 5:05:49 PM server.facade.ServerFacade downloadBatch
 INFO: Entering download batch method with credentials
 	Username: test2
 	Project: 2
+Dec 02, 2014 5:42:16 PM server.facade.ServerFacade downloadBatch
+INFO: Entering download batch method with credentials
+	Username: test4
+	Project: 2

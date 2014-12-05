@@ -30,15 +30,18 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
+import shared.modelclasses.Field;
 import client.BatchManager.BatchState;
+import client.BatchManager.BatchState.Cell;
 
 public class ImageComponent extends JComponent{
 	
 	private int w_centerX;
 	private int w_centerY;
 	private double scale;
-
+	private boolean highlights;
 	private boolean dragging;
+	private boolean dragged;
 	private int w_dragStartX;
 	private int w_dragStartY;
 	private int w_dragStartOriginX;
@@ -48,6 +51,7 @@ public class ImageComponent extends JComponent{
 	private int highlightW;
 	private int highlightH;
 	
+	private Cell currentCell;
 	private BatchState batchstate;
 	private Image batchImage;
 
@@ -55,7 +59,7 @@ public class ImageComponent extends JComponent{
 	
 	public ImageComponent(BatchState bs){
 		batchstate = bs;
-		
+		highlights = true;
 		w_centerX = 0;
 		w_centerY = 0;
 		scale = 1.0;
@@ -68,7 +72,7 @@ public class ImageComponent extends JComponent{
 
 		shapes = new ArrayList<DrawingShape>();
 		
-		this.setBackground(new Color(178, 223, 210));
+		this.setBackground(new Color(208, 223, 210));
 		this.setPreferredSize(new Dimension(700, 700));
 		this.setMinimumSize(new Dimension(100, 100));
 		this.setMaximumSize(new Dimension(1000, 1000));
@@ -83,21 +87,67 @@ public class ImageComponent extends JComponent{
 		ActionListener al = new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e){
+				shapes.clear();
+				currentCell = batchstate.getCurrentCell();
 				batchImage = batchstate.getImage();
-				highlightX = batchstate.getBatchInfo().getField_array()[0].getXcoordinate();
-				highlightY = batchstate.getBatchInfo().getFirst_y_coord();
-				highlightW = batchstate.getBatchInfo().getField_array()[0].getWidth();
+				highlightW = batchstate.getBatchInfo().getField_array()[currentCell.getColumn()-1].getWidth();
 				highlightH = batchstate.getBatchInfo().getRecord_height();
+				highlightX = batchstate.getBatchInfo().getField_array()[currentCell.getColumn()-1].getXcoordinate();
+				highlightY = batchstate.getBatchInfo().getFirst_y_coord() + (currentCell.getRow()-1)*highlightH;
+				highlightX = 0-batchImage.getWidth(null)/2 + highlightX;
+				highlightY = 0-batchImage.getHeight(null)/2 + highlightY;
 				shapes.add(new DrawingImage(batchImage, new Rectangle2D.Double(-batchImage.getWidth(null)/2,
 						-batchImage.getHeight(null)/2, batchImage.getWidth(null), batchImage.getHeight(null))));
-				
-				shapes.add(new DrawingRect(new Rectangle2D.Double(highlightX, highlightY, 
-						highlightW, highlightH), new Color(210, 180, 140, 100)));
+				if(highlights){
+					shapes.add(new DrawingRect(new Rectangle2D.Double(highlightX, highlightY, 
+							highlightW, highlightH), new Color(210, 180, 140, 100)));
+				}	
 				repaint();
 			}
 		};
 		batchstate.addListener(al);
 		
+	}
+	
+	public void toggleHighlights(){
+		highlights = !highlights;
+		batchstate.update();
+	}
+	
+	public void updateCell(int x, int y){
+		//establishes base measurements
+		int firstY = batchstate.getBatchInfo().getFirst_y_coord();
+		int numRecords = batchstate.getBatchInfo().getNum_records();
+		Field[] fields = batchstate.getBatchInfo().getField_array();
+		
+		//verifies that x and y are within the grid
+		if(y<firstY||y>(firstY+numRecords*highlightH)){ //y is less than the first record's y coordinate or greater than the last
+			return;
+		}
+		else if(x<fields[0].getXcoordinate()){ //x is less than the first x coordinate
+			return;
+		}
+		else if(x>(fields[fields.length-1].getXcoordinate()+fields[fields.length-1].getWidth())){ //x is greater than the last x coordinate
+			return;
+		}
+		
+		//sets the new column and row
+		int outputRow=0;
+		for(int i=firstY; i<(firstY + numRecords*highlightH); i=i+highlightH){
+			if(y<i){
+				break;
+			}
+			++outputRow;	
+		}
+		int outputColumn=0;
+		for(Field f : fields){
+			++outputColumn;
+			if(x>f.getXcoordinate()&x<(f.getXcoordinate()+f.getWidth())){
+				break;
+			}
+		}
+		batchstate.setCurrentCell(outputRow, outputColumn);
+		batchstate.update();
 	}
 	
 	private void initDrag() {
@@ -130,11 +180,11 @@ public class ImageComponent extends JComponent{
 
 	public void setScale(double newScale) {
 		scale = newScale;
-		if(scale > 10){
-			scale = 10;
+		if(scale > 5){
+			scale = 5;
 		}
-		else if(scale<0.1){
-			scale = 0.1;
+		else if(scale<0.5){
+			scale = 0.5;
 		}
 		this.repaint();
 	}
@@ -149,6 +199,10 @@ public class ImageComponent extends JComponent{
 		shapes.clear();
 		shapes.add(new DrawingImage(batchstate.getImage(), new Rectangle2D.Double(-batchImage.getWidth(null)/2,
 				-batchImage.getHeight(null)/2, batchImage.getWidth(null), batchImage.getHeight(null))));
+		if(highlights){
+			shapes.add(new DrawingRect(new Rectangle2D.Double(highlightX, highlightY, 
+					highlightW, highlightH), new Color(210, 180, 140, 100)));
+		}
 		repaint();
 		
 	}
@@ -225,6 +279,8 @@ public class ImageComponent extends JComponent{
 
 		@Override
 		public void mousePressed(MouseEvent e) {
+			dragged = false;
+			
 			int d_X = e.getX();
 			int d_Y = e.getY();
 			
@@ -267,6 +323,7 @@ public class ImageComponent extends JComponent{
 		@Override
 		public void mouseDragged(MouseEvent e) {		
 			if (dragging) {
+				dragged = true;
 				int d_X = e.getX();
 				int d_Y = e.getY();
 				
@@ -301,6 +358,28 @@ public class ImageComponent extends JComponent{
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			initDrag();
+			int d_X = e.getX();
+			int d_Y = e.getY();
+			
+			AffineTransform transform = new AffineTransform();
+			transform.translate(getWidth()/2.0, getHeight()/2.0);
+			transform.scale(scale, scale);
+			transform.translate(-w_centerX, -w_centerY);
+			
+			Point2D d_Pt = new Point2D.Double(d_X, d_Y);
+			Point2D w_Pt = new Point2D.Double();
+			try
+			{
+				transform.inverseTransform(d_Pt, w_Pt);
+			}
+			catch (NoninvertibleTransformException ex) {
+				return;
+			}
+			int x = (int) (w_Pt.getX()+batchImage.getWidth(null)/2.0);
+			int y = (int) (w_Pt.getY()+batchImage.getHeight(null)/2.0);
+			if(!dragged){
+				updateCell(x,y);
+			}
 		}
 
 		@Override

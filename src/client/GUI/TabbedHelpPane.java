@@ -6,7 +6,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 
+import javax.imageio.ImageIO;
+import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -17,7 +20,7 @@ import client.BatchManager.BatchState;
 
 public class TabbedHelpPane extends JTabbedPane{
 	private BatchState batchstate;
-	private JPanel field_help;
+	private JEditorPane field_help;
 	private JPanel image_navigator;
 	
 	public TabbedHelpPane (BatchState bs){
@@ -28,12 +31,11 @@ public class TabbedHelpPane extends JTabbedPane{
 			
 		    @Override
 		    protected void paintComponent(Graphics g) {
-		    	this.setBackground(Color.cyan);
+		    	this.setBackground(new Color(208, 223, 210));
 		        super.paintComponent(g);
 		        try {
 		        	image = batchstate.getImage();
 		        	if(image !=null){
-		        		//System.out.println("Setting thumnail size to width: " + this.getWidth()+", height: " + this.getHeight());
 		        		image = Thumbnails.of(image).size(this.getWidth(), this.getHeight()).asBufferedImage();
 		        	}
 				} catch (IOException e) {
@@ -43,29 +45,39 @@ public class TabbedHelpPane extends JTabbedPane{
 		    }
 		};
 		
+
+
+		field_help = new JEditorPane();
+		field_help.setEditable(false);
+		field_help.setContentType("text/html");
+		URL fieldhelpURL = batchstate.getHelpURL();
+		if(fieldhelpURL!=null){
+			try {
+				field_help.setPage(fieldhelpURL);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+		else{
+			//System.out.println("Invalid URL: " + batchstate.getHelpURL());
+		}
+
+		
+		this.add("Field Help", field_help);
+		this.add("Image Navigator", image_navigator);
+		
 		batchstate.addListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e){
+				try {
+					field_help.setPage(batchstate.getHelpURL());
+				} catch (IOException e1) {
+					System.out.println("Invalid helpURL found: " + batchstate.getHelpURL());
+				}
 				repaint();
 			}
 		});
 		
-		field_help = new JPanel(){
-			 @Override
-			    protected void paintComponent(Graphics g) {
-				 	try{
-				 		String field_help = batchstate.getBatchInfo().getField_array()[0].getField_help_file_path();
-				 		//System.out.println("Field help: " + field_help);
-				 	} catch(Exception e){
-				 		//System.out.println("No field help file found yet");
-				 	}
-				 	
-			    	this.setBackground(Color.gray);
-			        super.paintComponent(g);   
-			    }
-		};
-		this.add("Field Help", field_help);
-		this.add("Image Navigator", image_navigator);
 	}
 
 }

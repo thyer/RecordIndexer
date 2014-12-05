@@ -3,6 +3,7 @@ package client.BatchManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +33,14 @@ public class BatchState {
 	private int port;
 	private Credentials creds;
 	private BufferedImage image;
+	private BufferedImage helpImage;
 	private transient List<ActionListener> repaintlisteners;
 	private Batch_Result currentbatch;
 	private String [][] indexedData;
 	private Cell currentCell;
 	
 	public BatchState(String h, int p){
+		currentCell = new Cell(1,1);
 		host = h;
 		port = p;
 		currentbatch = null;
@@ -107,6 +110,28 @@ public class BatchState {
 		return image;
 	}
 	
+	public URL getHelpURL(){
+		try {
+			String path = getBatchInfo().getField_array()[currentCell.getColumn()-1].getField_help_file_path();
+			URL url = new URL("http://" + host + ":" + port + "/downloadFiles/" + path);
+			//System.out.println("Help image url: " + url.toString());
+			return url;
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+		}
+		//System.out.println("Returning invalid help Image");
+		return null;
+	}
+		
+	
+	public Cell getCurrentCell(){
+		return currentCell;
+	}
+	
+	public void setCurrentCell(int row, int column){
+		currentCell = new Cell(row, column);
+	}
+	
 	public String[] getProjects(){
 		String[] output = null;
 		try {
@@ -149,13 +174,6 @@ public class BatchState {
 			for(int i=0; i<indexedData.length; ++i){
 				indexedData[i][0] = "" + (i+1);
 			}
-			System.out.println("indexedData: \n");
-			for(int i=0; i<indexedData.length; ++i){
-				for(int j=0; j<indexedData[i].length; ++j){
-					System.out.print(indexedData[i][j] + " ");
-				}
-				System.out.println("");
-			}
 			index.setButtonBarEnabled(true);
 			update();
 
@@ -173,6 +191,7 @@ public class BatchState {
 	public Batch_Result getBatchInfo(){
 		if(testing){
 			Batch_Result tester = new Batch_Result(1, 1, new Image_URL("path"), 1, 1, 1, 1);
+			tester.setRecord_height(20);
 			tester.setField_array(new Field[]{
 					new Field("Field1"), new Field("Field2"), new Field("Field3"), new Field("Field4")
 			});

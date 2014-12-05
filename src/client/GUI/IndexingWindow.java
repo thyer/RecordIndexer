@@ -98,6 +98,12 @@ public class IndexingWindow extends JFrame{
 			}
 		});
 		buttonpanel.add(toggleButton);
+		toggleButton.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e){
+				image.toggleHighlights();
+			}
+		});
 		buttonpanel.add(saveButton);
 		buttonpanel.add(submitButton);
 		setButtonBarEnabled(false);

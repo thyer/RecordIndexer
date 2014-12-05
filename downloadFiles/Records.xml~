@@ -32,36 +32,12 @@
       <email>test3@gmail.com</email>
       <indexedrecords>0</indexedrecords>
     </user>
-    <user>
+        <user>
       <username>test4</username>
       <password>test4</password>
       <firstname>Test</firstname>
       <lastname>Four</lastname>
       <email>test4@gmail.com</email>
-      <indexedrecords>0</indexedrecords>
-    </user>
-    <user>
-      <username>test5</username>
-      <password>test5</password>
-      <firstname>Test</firstname>
-      <lastname>Five</lastname>
-      <email>test5@gmail.com</email>
-      <indexedrecords>0</indexedrecords>
-    </user>
-    <user>
-      <username>test6</username>
-      <password>test6</password>
-      <firstname>Test</firstname>
-      <lastname>Six</lastname>
-      <email>test6@gmail.com</email>
-      <indexedrecords>0</indexedrecords>
-    </user>
-    <user>
-      <username>test7</username>
-      <password>test7</password>
-      <firstname>Test</firstname>
-      <lastname>Seven</lastname>
-      <email>test7@gmail.com</email>
       <indexedrecords>0</indexedrecords>
     </user>
   </users>
