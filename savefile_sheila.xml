@@ -1,0 +1,21 @@
+<client.BatchManager.BatchSaveObject>
+  <topBottomLocation>-6</topBottomLocation>
+  <leftRightLocation>-6</leftRightLocation>
+  <xTranslate>0</xTranslate>
+  <yTranslate>0</yTranslate>
+  <zoom>0.0</zoom>
+  <highlights>false</highlights>
+  <inverted>false</inverted>
+  <windowPosition>
+    <x>0</x>
+    <y>25</y>
+  </windowPosition>
+  <windowSize>
+    <width>1800</width>
+    <height>1000</height>
+  </windowSize>
+  <creds>
+    <username>sheila</username>
+    <password>parker</password>
+  </creds>
+</client.BatchManager.BatchSaveObject>

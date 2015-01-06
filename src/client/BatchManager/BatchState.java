@@ -3,7 +3,13 @@ package client.BatchManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.net.MalformedURLException;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,21 +17,25 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
+
 import shared.communication.Batch_Result;
+import shared.communication.Batch_Submit_Params;
 import shared.communication.GetProjects_Result;
 import shared.communication.Get_Sample_Batch_Params;
-import shared.communication.Image_URL;
 import shared.communication.ValidateUser_Result;
 import shared.modelclasses.Credentials;
-import shared.modelclasses.Field;
+import shared.modelclasses.Value;
 import client.GUI.DownloadDialog;
 import client.GUI.IndexingWindow;
 import client.GUI.LoginWindow;
+import client.SpellCorrector.SpellCorrector.NoSimilarWordFoundException;
+import client.SpellCorrector.SpellFacade;
 import client.communicator.ClientCommunicator;
 import client.communicator.ClientException;
 
 public class BatchState {
-	private boolean testing = false;
 	private ClientCommunicator cc;
 	private LoginWindow login;
 	private IndexingWindow index;
@@ -38,27 +48,21 @@ public class BatchState {
 	private Batch_Result currentbatch;
 	private String [][] indexedData;
 	private Cell currentCell;
+	private SpellFacade spellfacade;
 	
+	/**
+	 * Constructor for the batch state, takes in a host and port, then sets up managerial information for the index and login window
+	 * @param h the host name
+	 * @param p the port number
+	 */
 	public BatchState(String h, int p){
 		currentCell = new Cell(1,1);
 		host = h;
 		port = p;
 		currentbatch = null;
 		repaintlisteners = new ArrayList<ActionListener>();
-		if(testing){
-			indexedData = new String[4][5];
-			for(int i=0; i<4; ++i){
-				for (int j=0; j<5; ++j){
-					if(j==0){
-						indexedData[i][j] = "" + i;
-					}
-					else{
-						indexedData[i][j] = "Data" + i + "" + j;
-					}
-				}
-			}
-		}
 		
+		//begins management process for login and index windows
 		login = new LoginWindow(this);
 		login.setLocationRelativeTo(null);
 		login.setResizable(false);
@@ -68,10 +72,17 @@ public class BatchState {
 		image = null;
 		currentCell = new Cell(1,1);
 		cc = new ClientCommunicator(host, port);
+		
 	}
-	
+
+	/**
+	 * Validates the user's credentials. If the credentials are valid, closes the login window and opens the index window
+	 * If credentials are invalid or the connection fails, shows dialog box notifying the user
+	 */
 	public void validateUser(){
 		creds = login.getCreds();
+		
+		//Attempts to validate user based on credentials
 		try {
 			ValidateUser_Result vur = cc.validateUser(creds);
 			if(vur.isOutput()){
@@ -80,25 +91,19 @@ public class BatchState {
 				JOptionPane.showMessageDialog(login, welcome);
 				login.setVisible(false);
 				index.setVisible(true);
-				if(testing){
-					String testing = "http://thinkios.com/wp-content/uploads/2012/08/beta-testing-redsn0w.jpg";
-					try {
-						image = ImageIO.read(new URL(testing));
-						System.out.println("image set to : " + testing);
-						update();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					index.setButtonBarEnabled(true);
-					
-					update();
-				}
 			}
 			else{
-				JOptionPane.showMessageDialog(login, "Failed login - bad credentials");
+				JOptionPane.showMessageDialog(login, "Failed login - bad credentials"); //Will reject bad credentials
 			}
 		} catch (ClientException e) {
-			JOptionPane.showMessageDialog(login, "Failed login - bad address");
+			JOptionPane.showMessageDialog(login, "Failed login - bad connection");		//Will reject if connection failed
+		}
+		
+		//Attempts to restore a previous session
+		try {
+			restoreSession();
+		} catch (IOException e) {
+			System.out.println("No save file found...no problem!");
 		}
 	}
 	
@@ -114,12 +119,10 @@ public class BatchState {
 		try {
 			String path = getBatchInfo().getField_array()[currentCell.getColumn()-1].getField_help_file_path();
 			URL url = new URL("http://" + host + ":" + port + "/downloadFiles/" + path);
-			//System.out.println("Help image url: " + url.toString());
 			return url;
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
+			//Do nothing, this means it's not available yet
 		}
-		//System.out.println("Returning invalid help Image");
 		return null;
 	}
 		
@@ -162,6 +165,48 @@ public class BatchState {
 		repaintlisteners.add(al);
 	}
 	
+	/**
+	 * Checks a cell to verify whether the word is recognized by SpellFacade
+	 * @param column tells us which SpellChecker in SpellFacade to use
+	 * @param text the text to be checked
+	 * @return true if SpellFacade recognizes the word, else false
+	 */
+	public boolean checkCell(int column, String text){
+		if(text.equals("")){
+			return true;
+		}
+		else{
+			try {
+				return spellfacade.checkWord(column-1, text);
+			} catch (NoSimilarWordFoundException e) {
+				return false;
+			}
+		}
+	}
+	
+	/**
+	 * Gives all recommendations which are edit2 distance away from the text
+	 * @param column tells SpellFacade which field we're checking
+	 * @param text the text to give recommendations for
+	 * @return
+	 */
+	public String[] getSpellingSuggestions(int column, String text){
+		String[] output;
+		try {
+			output = spellfacade.getSuggestions(column-1, text);
+		} catch (NoSimilarWordFoundException e) {		//handles the possibility that SpellChecker thinks you're an idiot
+			output = new String[1];
+			output[0] = "";								//returns an empty string.
+		}
+		return output;
+	}
+
+	/**
+	 * Calls the client communicator's download methods. This only happens when an actual state change happens to the batch
+	 * If the user restores an earlier session, this method is not called.
+	 * @param prjID the Project ID for which the batch will be downloaded
+	 * @return true if the batch successfully downloads, false otherwise
+	 */
 	public boolean downloadBatch(int prjID){
 		Get_Sample_Batch_Params gsbp = new Get_Sample_Batch_Params(creds, prjID);
 		try {
@@ -173,12 +218,18 @@ public class BatchState {
 			indexedData = new String[br.getNum_records()][br.getNum_fields()+1]; //adding on extra column for rec_num
 			for(int i=0; i<indexedData.length; ++i){
 				indexedData[i][0] = "" + (i+1);
+				for(int j=1; j<indexedData[i].length; ++j){
+					indexedData[i][j] = "";
+				}
 			}
 			index.setButtonBarEnabled(true);
+			spellfacade = new SpellFacade(this);
+			
 			update();
+			
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			e.printStackTrace();		//this occurs if a user tries to download another batch
 			return false;
 		}
 		return true;
@@ -188,31 +239,179 @@ public class BatchState {
 		return indexedData;
 	}
 	
+	public void setIndexedData(int index1, int index2, String text){
+		indexedData[index1][index2]=text;
+	}
+	
 	public Batch_Result getBatchInfo(){
-		if(testing){
-			Batch_Result tester = new Batch_Result(1, 1, new Image_URL("path"), 1, 1, 1, 1);
-			tester.setRecord_height(20);
-			tester.setField_array(new Field[]{
-					new Field("Field1"), new Field("Field2"), new Field("Field3"), new Field("Field4")
-			});
-			return tester;
-		}
 		return currentbatch;
 	}
 	
-	public void save(){
-		//writes all data for the session to a file based on the username
-		//CSV perhaps?
+	/**
+	 * Saves the index/image information if applicable, plus any window size/location data
+	 * The save file is titled "savefile_<username>.xml
+	 * @throws IOException thrown if the file cannot be saved
+	 */
+	public void save() throws IOException{ //throws an IO exception if the file can't be saved
+		BatchSaveObject bso = new BatchSaveObject();
+		
+		//Saves index/image information if relevant
+		if(currentbatch==null){
+			System.out.println("No indexing data to be saved");
+		}
+		else{
+			bso.setIndexedData(indexedData);
+			bso.setInverted(!index.invertImage());
+			index.invertImage();
+			bso.setBatchinfo(currentbatch);
+			bso.setHighlights(!index.toggleHighlights());
+			index.toggleHighlights();
+			bso.setZoom(index.getZoom());
+			bso.setxTranslate(index.getXTranslate());
+			bso.setyTranslate(index.getYTranslate());
+		}
+		
+		//Saves session window data
+		bso.setLeftRightLocation(index.getLeftRightSliderPosition());
+		bso.setTopBottomLocation(index.getTopBottomSliderPosition());
+		bso.setWindowPosition(index.getLocation());
+		System.out.println("Window position being set to: " + bso.getWindowPosition());
+		bso.setWindowSize(index.getSize());
+		
+		bso.setCreds(creds);
+		
+		//Writing information to file
+		XStream xStream = new XStream(new DomDriver());
+		OutputStream outFile = new BufferedOutputStream(new FileOutputStream("savefile_" + creds.getUsername() + ".xml")); //Makes a xml file with the person's username
+		xStream.toXML(bso, outFile); // This writes your batchstate to the outputFile;
+		outFile.close(); //close the writer
 	}
 	
-	public void restoreSession(){
-		//searches for file based on username
-		//if found, reads all info in file and writes it into the fields
-		//else, do nothing
+	public void restoreSession() throws IOException{ //will throw an exception if the file isn't found, needs to be handled when called
+		
+		//Pulling info from file
+		System.out.println("Restoring previous session");
+		XStream xStream = new XStream(new DomDriver()); 
+		InputStream modFile	= new BufferedInputStream(new FileInputStream("savefile_" + creds.getUsername() + ".xml")); //find the file with the given username
+		BatchSaveObject bso = (BatchSaveObject) xStream.fromXML(modFile); //Read that batchstate back in to the exact form it was before
+		
+		
+		//Restores batch information, if relevant
+		if(bso.getBatchinfo()!=null){
+			currentbatch=bso.getBatchinfo();
+			indexedData=bso.getIndexedData();
+			index.setButtonBarEnabled(true);
+			String url_path = currentbatch.getImage_path().getUrl_path();
+			URL url = new URL("http://" + host + ":" + port + "/downloadFiles/" + url_path);
+			image = ImageIO.read(url);
+			spellfacade = new SpellFacade(this);
+			index.setXTranslate(bso.getxTranslate());
+			index.setYTranslate(bso.getyTranslate());
+			update();
+			
+			while(index.invertImage()!=bso.isInverted()){
+				//this will run a maximum of twice
+			}
+			while(index.toggleHighlights()!=bso.isHighlights()){
+				//this will also run a maximum of twice
+			}
+			index.setZoom(bso.getZoom());
+		}
+		else{
+			System.out.println("No batch info to be restored");
+		}
+		
+		//Restores session window information
+		index.setSize(bso.getWindowSize());
+		index.setLocation(bso.getWindowPosition());
+		index.setTopBottomSliderPosition(bso.getTopBottomLocation());
+		index.setLeftRightSliderPosition(bso.getLeftRightLocation());
+		System.out.println("Restored window positionb being set to: " + index.getLocation());
+		JOptionPane.showMessageDialog(index, "Your previous session has been restored");
+		
+		modFile.close();
 	}
 	
-	public void logout(){
-		//save user state
+	/**
+	 * Calls the submit method on the client communicator based on the indexing data present in the window
+	 * Once submission is complete, begins a new session for the user
+	 */
+	public void submit(){
+		//general data
+		int batchID = this.getBatchInfo().getBatchID();
+		ArrayList<Value> valueList = new ArrayList<Value>();
+		Batch_Submit_Params bsp;
+		
+		//input data
+		for(int i=0; i<indexedData.length; ++i){
+			for(int j=1; j<indexedData[i].length; ++j){
+				Value temp = new Value(indexedData[i][j]);
+				if(temp.getData()==null){
+					temp.setData("");
+				}
+				temp.setBatch_id(batchID);
+				temp.setRec_num(i+1);
+				temp.setField_id(j-1);
+				valueList.add(temp);
+			}
+		}
+		Value[] values = new Value[valueList.size()];
+		for(int i=0; i<valueList.size(); ++i){
+			values[i]=valueList.get(i);
+		}
+		
+		//preparing for transmission
+		bsp = new Batch_Submit_Params(creds, batchID, values);
+		try {
+			if(!cc.submitBatch(bsp)){
+				System.out.println("Error in submitting batch");
+			}
+			else{
+				//Do nothing, this is successful
+			}
+		} catch (ClientException e) {
+			e.printStackTrace();
+			System.out.println("Client error thrown while trying to submit batch");
+		}
+		
+		startNewSession();
+	}
+	
+	/**
+	 * Disposes the existing index window and creates a new one, then calls save to reflect the new session
+	 */
+	public void startNewSession(){
+		index.dispose();
+		indexedData=null;
+		currentbatch=null;
+		index = new IndexingWindow(this);
+		index.setSize(1800,1000);
+		image = null;
+		currentCell = new Cell(1,1);
+		cc = new ClientCommunicator(host, port);
+		JOptionPane.showMessageDialog(login, "Thank you for your submission");
+		login.setVisible(false);
+		index.setVisible(true);
+		try {
+			save();	//this ensures that if a user submits, then exits, that the submitted session won't be restored
+		} catch (IOException e) {
+			System.out.println("Saving failure occurred in method BatchState::startNewSession.");
+		}
+	}
+	
+	/**
+	 * Saves, then ends the current session
+	 * @throws IOException if save doesn't happen right
+	 */
+	public void logout() throws IOException{
+		save();
+		index.dispose();
+		indexedData=null;
+		currentbatch=null;
+		index = new IndexingWindow(this);
+		index.setSize(1800,1000);
+		image = null;
+		currentCell = new Cell(1,1);
 		index.setVisible(false);
 		login.setVisible(true);
 	}
@@ -223,8 +422,9 @@ public class BatchState {
 	}
 	
 	public void update(){
-		for (ActionListener al : repaintlisteners){
-			al.actionPerformed(new ActionEvent (al, port, host));
+		
+		for(int i=0; i<repaintlisteners.size(); ++i){
+			repaintlisteners.get(i).actionPerformed(new ActionEvent (repaintlisteners.get(i),port,host));
 		}
 	}
 
@@ -245,6 +445,19 @@ public class BatchState {
 		
 	}
 	
+	public int getPort(){
+		return port;
+	}
+	
+	public String getHost(){
+		return host;
+	}
+	
+	/**
+	 * Public interior class designed to help manage current cell location
+	 * @author thyer
+	 *
+	 */
 	public class Cell{
 		private int row;
 		private int column;

@@ -40,6 +40,7 @@ public class ImageComponent extends JComponent{
 	private int w_centerY;
 	private double scale;
 	private boolean highlights;
+	private boolean invert;
 	private boolean dragging;
 	private boolean dragged;
 	private int w_dragStartX;
@@ -58,8 +59,10 @@ public class ImageComponent extends JComponent{
 	private ArrayList<DrawingShape> shapes;
 	
 	public ImageComponent(BatchState bs){
+		//basic setup
 		batchstate = bs;
 		highlights = true;
+		invert = false;
 		w_centerX = 0;
 		w_centerY = 0;
 		scale = 1.0;
@@ -67,15 +70,14 @@ public class ImageComponent extends JComponent{
 		highlightY = 0;
 		highlightW = 10;
 		highlightH = 10;
-		
 		initDrag();
-
 		shapes = new ArrayList<DrawingShape>();
 		
+		//Background is green because green is awesome
 		this.setBackground(new Color(208, 223, 210));
 		this.setPreferredSize(new Dimension(700, 700));
-		this.setMinimumSize(new Dimension(100, 100));
-		this.setMaximumSize(new Dimension(1000, 1000));
+		this.setMinimumSize(new Dimension(100, 100));		//to prevent a doofus from making the image component too small
+		this.setMaximumSize(new Dimension(1000, 1000));		//also idiot proofing
 		
 		this.addMouseListener(mouseAdapter);
 		this.addMouseMotionListener(mouseAdapter);
@@ -114,6 +116,10 @@ public class ImageComponent extends JComponent{
 		batchstate.update();
 	}
 	
+	public boolean getHighlights(){
+		return highlights;
+	}
+	
 	public void updateCell(int x, int y){
 		//establishes base measurements
 		int firstY = batchstate.getBatchInfo().getFirst_y_coord();
@@ -146,6 +152,7 @@ public class ImageComponent extends JComponent{
 				break;
 			}
 		}
+		//System.out.println("Updating current cell to row: " + outputRow + " + column: " + outputColumn);
 		batchstate.setCurrentCell(outputRow, outputColumn);
 		batchstate.update();
 	}
@@ -193,6 +200,22 @@ public class ImageComponent extends JComponent{
 		return scale;
 	}
 	
+	public int getCenterX(){
+		return this.w_centerX;
+	}
+	
+	public void setCenterX(int x){
+		w_centerX = x;
+	}
+	
+	public int getCenterY(){
+		return this.w_centerY;
+	}
+	
+	public void setCenterY(int y){
+		w_centerY = y;
+	}
+	
 	public void invertImage(){
 		RescaleOp ro = new RescaleOp (-1.0f, 255f, null);
 		batchstate.setImage(ro.filter(batchstate.getImage(),null));
@@ -204,7 +227,12 @@ public class ImageComponent extends JComponent{
 					highlightW, highlightH), new Color(210, 180, 140, 100)));
 		}
 		repaint();
+		invert = !invert;
 		
+	}
+	
+	public boolean isInverted(){
+		return invert;
 	}
 	
 	private void drawShapes(Graphics2D g2) {

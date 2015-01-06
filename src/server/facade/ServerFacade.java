@@ -202,7 +202,7 @@ public class ServerFacade {
 			}
 			for(Value v : bsp.getField_values()){
 				v.setField_id(v.getField_id() + minimumfieldID); //adds the minimum field value to the cardinal value of the field on input
-				System.out.println("In server facade, I'm adding the value with the data: " + v.getData());
+				//System.out.println("In server facade, I'm adding the value with the data: " + v.getData());
 				db.getValueDAO().addValue(v);
 			}
 			
@@ -221,6 +221,7 @@ public class ServerFacade {
 			return true;
 		}catch(Exception e){
 			logger.severe("Throwing error in ServerFacade.submitBatch");
+			logger.severe(e.getMessage());
 			db.endTransaction(false);
 			return false;
 		}

@@ -11,6 +11,7 @@ import java.net.URL;
 import javax.imageio.ImageIO;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
@@ -21,11 +22,14 @@ import client.BatchManager.BatchState;
 public class TabbedHelpPane extends JTabbedPane{
 	private BatchState batchstate;
 	private JEditorPane field_help;
+	private JScrollPane field_help_pane;
 	private JPanel image_navigator;
 	
 	public TabbedHelpPane (BatchState bs){
 		super();
 		batchstate = bs;
+		
+		//Image navigator, ignore most of this, it's not functional. Extra credit didn't seem worth it after 60+ hours of coding
 		image_navigator = new JPanel(){
 			BufferedImage image = batchstate.getImage();
 			
@@ -34,9 +38,9 @@ public class TabbedHelpPane extends JTabbedPane{
 		    	this.setBackground(new Color(208, 223, 210));
 		        super.paintComponent(g);
 		        try {
-		        	image = batchstate.getImage();
+		        	image = batchstate.getImage();					//this only allows setup if a batch is downloaded and available
 		        	if(image !=null){
-		        		image = Thumbnails.of(image).size(this.getWidth(), this.getHeight()).asBufferedImage();
+		        		image = Thumbnails.of(image).size(this.getWidth(), this.getHeight()).asBufferedImage();	//found this with Google
 		        	}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -46,10 +50,10 @@ public class TabbedHelpPane extends JTabbedPane{
 		};
 		
 
-
+		//Sets up the field help image
 		field_help = new JEditorPane();
 		field_help.setEditable(false);
-		field_help.setContentType("text/html");
+		field_help.setContentType("text/html");			//prepares it to receive an HTML image
 		URL fieldhelpURL = batchstate.getHelpURL();
 		if(fieldhelpURL!=null){
 			try {
@@ -59,11 +63,11 @@ public class TabbedHelpPane extends JTabbedPane{
 			}
 		}
 		else{
-			//System.out.println("Invalid URL: " + batchstate.getHelpURL());
+			//Do nothing, it's not available yet
 		}
 
-		
-		this.add("Field Help", field_help);
+		field_help_pane = new JScrollPane(field_help);	//packages the image inside a scroll pane
+		this.add("Field Help", field_help_pane);
 		this.add("Image Navigator", image_navigator);
 		
 		batchstate.addListener(new ActionListener(){

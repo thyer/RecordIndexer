@@ -81,6 +81,7 @@ public class DownloadDialog extends JDialog{
 		});
 	}
 	
+	//This opens an example image using a dialog module
 	public void addImage(JPanel j){
 		final JDialog imageDialog = new JDialog(this);
 		JButton cancelButton = new JButton("Exit");
@@ -89,7 +90,7 @@ public class DownloadDialog extends JDialog{
 		cancelButton.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e){
-				imageDialog.dispose();
+				imageDialog.dispose();		//dialog can be exited by clicking the "Cancel" button
 			}
 		});
 		

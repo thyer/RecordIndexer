@@ -36,9 +36,9 @@ public class LoginWindow extends JFrame{
 		JPanel user = new JPanel();
 		user.add(new JLabel("Username:"));
 		usernameText = new JTextField(30);
-		usernameText.setText("sheila");
+		usernameText.setText("test1");
 		passwordText = new JPasswordField(30);
-		passwordText.setText("parker");
+		passwordText.setText("test1");
 		user.add(usernameText);
 		add(user);
 		
